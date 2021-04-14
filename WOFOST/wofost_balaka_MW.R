@@ -44,7 +44,7 @@ contr$modelstart <- as.Date("2010-11-01")
 contr$stop_maturity <- 1
 
 # Run scenarios
-pdates <- as.character(seq.Dates("2010-08-31", "2011-03-31", "days"))
+pdates <- as.character(seq(as.Date("2010-08-31"), as.Date("2011-03-31"), "days"))
 wofost.sims <- list() # Create an empty list for all the simulations
 
 n <- 1
@@ -52,28 +52,28 @@ for(d in pdates){
     contr$modelstart <- as.Date(d)
     out <- wofost(crop, wth, soil, contr)
     assign(paste('pdate',d,sep = '_'), wofost(crop, wth, soil, contr) , envir = .GlobalEnv)
-    wofost.sims[[n]] <- out
+    wofost.sims[[n]] <- out # Add output simulation to list
     n <- n +1
 }
 
 cols <- rainbow(212)
 
-plot(pdate_1$date,pdate_1$WSO, type="l",col=cols, xlim = c(as.Date("2010-10-01"),as.Date("2011-03-08")), ylim = c(0, 6000))
-
-n <- 1
-for(p in wofost.sims){
-    if(n = 1){
-        print('yes!')
-    } else {print('no')}
-#     lines(p[n,1], # Get the nth row of column 1 (date)
-#          p[n,9], # Get the nth row of column 9 (WSO/yield)
-#          col = cols)
-    n <- n +1
+# Lines
+for(d in pdates){
+    sim <- get(paste('pdate',d,sep = '_'), envir = .GlobalEnv)
+    if(d == "2010-08-31"){
+        plot(sim$date, sim$WSO, type="l",col=cols, xlim = c(as.Date("2010-10-01"),as.Date("2011-12-31")), ylim = c(0, 10000))
+    } else {
+        lines(sim$date,sim$WSO, col=cols)
+    }
 }
-# lines(pdate_2$date,pdate_2$WSO, col=cols)
-# lines(pdate_3$date,pdate_3$WSO, col=cols)
-# lines(pdate_4$date,pdate_4$WSO, col=cols)
-# lines(pdate_5$date,pdate_5$WSO, col=cols)
-# lines(pdate_6$date,pdate_6$WSO, col=cols)
-# lines(pdate_7$date,pdate_7$WSO, col=cols)
-# lines(pdate_8$date,pdate_8$WSO, col=cols)
+
+# Max points
+for(d in pdates){
+    sim <- get(paste('pdate',d,sep = '_'), envir = .GlobalEnv)
+    if(d == "2010-08-31"){
+        plot(as.Date(d), max(sim$WSO), type="p",col=cols, xlim = c(as.Date("2010-07-01"),as.Date("2011-10-01")), ylim = c(0, 10000))
+    } else {
+        points(as.Date(d), max(sim$WSO), col=cols)
+    }
+}
