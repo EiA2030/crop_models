@@ -9,7 +9,7 @@ weather$srad_kJ.m2 <- weather$srad_J.m2/1000
 weather$tmin_C <- weather$tmin_K-273
 weather$tmax_C <- weather$tmax_K-273
 weather$vapr_kPa <- weather$vapr_kg.m2*0.00980665
-weather$wind_ms <- sqrt(weather$windU_m.s^2 + weather$windV_m.s^2)
+weather$wind_ms <- sqrt(weather$windU_m.s^2 + weather$windV_m.s^2) # https://stackoverflow.com/questions/21484558/how-to-calculate-wind-direction-from-u-and-v-wind-components-in-r
 
 # Delete columns of the old units
 cols2delete <- c("X", "Y", "srad_J.m2", "tmin_K", "tmax_K", "vapr_kg.m2", "windU_m.s", "windV_m.s")
