@@ -1,3 +1,4 @@
+# Example C&P from: https://reagro.org/methods/explanatory/wofost/example.html 
 library(Rwofost)
 
 f <- system.file("extdata/Netherlands_Swifterbant.csv", package="meteor")
