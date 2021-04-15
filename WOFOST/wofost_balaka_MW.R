@@ -44,7 +44,7 @@ contr$modelstart <- as.Date("2010-11-01")
 contr$stop_maturity <- 1
 
 # Run scenarios
-pdates <- as.character(seq(as.Date("2010-08-31"), as.Date("2011-03-31"), "days"))
+pdates <- as.character(seq(as.Date("2010-08-31"), as.Date("2014-08-31"), "days"))
 wofost.sims <- list() # Create an empty list for all the simulations
 
 n <- 1
@@ -56,24 +56,24 @@ for(d in pdates){
     n <- n +1
 }
 
-cols <- rainbow(212)
+cols <- rainbow(365*4)
 
 # Lines
 for(d in pdates){
     sim <- get(paste('pdate',d,sep = '_'), envir = .GlobalEnv)
     if(d == "2010-08-31"){
-        plot(sim$date, sim$WSO, type="l",col=cols, xlim = c(as.Date("2010-10-01"),as.Date("2011-12-31")), ylim = c(0, 10000))
+        plot(sim$date, sim$WSO, type="l",col=cols, xlim = c(as.Date("2010-10-01"),as.Date("2014-12-31")), ylim = c(0, 10000))
     } else {
         lines(sim$date,sim$WSO, col=cols)
     }
 }
 
-# Max points
+# Max yield (WSO) for each planting date
 for(d in pdates){
     sim <- get(paste('pdate',d,sep = '_'), envir = .GlobalEnv)
     if(d == "2010-08-31"){
-        plot(as.Date(d), max(sim$WSO), type="p",col=cols, xlim = c(as.Date("2010-07-01"),as.Date("2011-10-01")), ylim = c(0, 10000))
+        plot(as.Date(d), max(sim$WSO), type="p",pch=20,cex=0.5,col=cols, xlim = c(as.Date("2010-08-31"),as.Date("2014-08-31")), ylim = c(0, 10000))
     } else {
-        points(as.Date(d), max(sim$WSO), col=cols)
+        points(as.Date(d), max(sim$WSO), pch=20,cex=1, col=cols)
     }
 }
