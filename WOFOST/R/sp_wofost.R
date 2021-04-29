@@ -1,4 +1,3 @@
-#test
 sp.wofost <- function(crop, soil, sdate, edate, parameter){
     wofost.Ps <- list() # Start an empty list
     n <- 1
