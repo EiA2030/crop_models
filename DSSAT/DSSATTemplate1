@@ -1,0 +1,246 @@
+###Install DSSAT package from Github source using devtools package
+devtools::install_github('https://github.com/palderman/DSSAT')
+
+#install DSSAT package from CRAN
+install.packages('DSSAT')
+
+#Load the DSSAT package
+library(DSSAT)
+
+#Example setting DSSAT-CSM path for windows operating system
+#options(DSSAT.CSM = 'C://DSSAT47//DSCSM047.EXE')
+#DSSAT.CSM = 'C://DSSAT47//DSCSM047.EXE'
+
+#Example setting DSSAT-CSM path for Unix-style operating system
+options(DSSAT.CSM = 'C:/DSSAT47/dscsm047')
+
+
+###Reading all Soil profiles in a file
+#Set path
+soil_file<-system.file('extdata','SOIL.SOL',package='DSSAT')
+
+all_profiles<-read_sol('SOIL.SOL')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+DSSAT = 'C:/DSSAT47/Soil'
+all_profiles<-read_sol("soil.sol")
+
+read.DSSAT
+install.packages('Dasst')
+library('DSSAT')
+library(Dasst)
+
+pr<-read.dssat('C:/DSSAT47/Soil')
+pr<-read_dssat('~/C:/DSSAT47/Soil')
+pr<-read_soil_profile(solfile=f,profile="soil.sol")
+read_soil_pr
+WHAPS047.ECO <- system.file('extdata','MZCER047.ECO',package='DSSAT')
+
+soil_file <- system.file('~/C:/DSSAT47/Soil','soil.sol',package='DSSAT')
+
+eco <- read_sol('soil_file')
+
+
+#Reading a single profile
+single_profile<-read_sol('SOIL.SOL',id_soil='IB00000001')
+
+#Renaming the profile and replacing SSAT with new values
+# calculated from SBDM using tidyverse-style coding
+#install.packages("magrittr")
+#install.packages("dplyr")
+
+library(magrittr)
+library(dplyr)
+
+new_profile<-single_profile %>%
+  mutate(PEDON='IBNEW00001',
+         SSAT=0.95*(2.65-SBDM)/2.65)
+
+
+#Renaming the profile and replacing SSAT with new values
+# calculated from SBDM without using tidyverse-style coding
+
+new_profile<-single_profile
+new_profile$PEDON[1]<-'IBNEW00001'
+new_profile$SSAT[[1]]<-0.95*(2.65-single_profile$SBDM[[1]])/2.65
+
+#Appending new profile to SOIL.SOL
+write_sol(new_profile,'SOIL.SOL',append = TRUE)
+
+
+
+
+
+
+###Generate a list of the weather files
+wth_file_list<-list.files(pattern = '.WTH')
+
+#Read all weather files into a list of tibbles
+all_wth<-wth_file_list %>%
+  map(read_wth)
+
+#Combine all years into a single tibble for summary calculations
+combined_wth<-all_wth %>%
+  bind_rows()
+
+#Calculate long term average temperature (TAV)
+tav<-combined_wth %>%
+  summarize(TAV=mean((TMAX+TMIN)/2))
+
+#Calculate monthly temperature amplitude (AMP)
+amp<-combined_wth %>%
+  
+  #Extract month from Date column
+  mutate (month=month(Date)) %>%
+  
+  #Group data by month
+  group_by(month) %>%
+  
+  #Calculate monthly means
+  summarize(monthly_avg=mean((TMAX+TMIN)/2)) %>%
+  
+  #Calculate AMP as half the difference between minimum and maximum temperature
+  summarize(AMP=(max(monthly_avg)-min(monthly_avg))/2)
+
+#Generate new general information table
+general_new<-all_wth[[1]] %>% #use first year as a template
+  
+  #Extract GENERAL table
+  attr('GENERAL') %>%
+  
+  #Replace TAV and AMP with new values
+  mutate(TAV=tav$TAV,
+         AMP=amp$AMP)
+
+#Store new general information table within each year
+for(i in 1:length(all_wth)) {
+  #Replace general information table
+  attr(all_wth[[i]],'GENERAL') <-general_new
+}
+#Overwrite previous weather files with modified weather data
+for(i in 1:length(all_wth)){
+  #Write weather file i
+  write_wth(all_wth[[i]],wth_file_list[i])
+}
+
+
+###read in original FileX
+file_x<-read_filex('KSAS8101.WHX')
+
+#Add an additional 60mm irrigation event on 4 May 1982
+file_x$'IRRIGATION AND WATER MANAGEMENT' <-
+  
+  #Extract the original IRRIGATION AND WATER MANAGEMENT section
+  file_x$'IRRIGATION AND WATER MANAGEMENT' %>%
+  
+  #Modify the IDATE, IROP,and IRVAL columns only where I equals 1
+  mutate_cond(I==1,
+              IDATE=c(IDATE,as.POSIXct('1982-05-04')),
+              IROP =c(IROP,"IR001"),
+              IRVAL=c(IRVAL,60))
+            
+#Overwrite original FileX with new values
+write_filex(file_x,'KSAS8101')
+  
+
+
+#####Generate a DSSAT batch file using a tibble
+tibble(FILEX='KSAS8101.WHX',TRNO=1:6,RP=1, SQ=0,OP=0, CO=0) %>%
+  write_dssbatch()
+
+#Generate  a DSSAT batch file with function arguments
+write_dssbatch(filex='KSAS8101.WHX',trtno=1:6)
+
+#Run DSSAT-CSM
+run_dssat()
+
+#Read seasonal output file
+smry<-read_output('Summary.OUT')
+
+
+####Read daily simulated plant growth output
+pgro<-read_output('PlantGro.OUT') %>%
+  
+  #Filter to treatments 4 to 6
+  filter(TRNO %in% 4:6) %>%
+  
+  #Convert TRNO to a factor and rename to Fertilization Rate
+  mutate('Fertilization Rate'=factor(TRNO,labels = c(0,60,180)))
+
+#Read time-series observed plant growth data from FileT
+filet<-read_filet('KSAS8101.WHT') %>%
+  
+  #Filter to treatments 4 to 6
+  filter(TRNO %in% 4:6) %>%
+  
+  #Convert TRNO to a factor and renme to fertilization Rate
+  mutate('Fertilization Rate'=factor(TRNO,labels=c(0,60,180))) %>%
+  
+  #Add days after planting (DAP) to observed data
+  left_join(select(pgro, DATE, DAP))
+
+#Construct a combined plot with simulated and observed data
+ggplot(data=pgro,aes(x=DAP,y=LAID,linetype='Fertilization Rate'))+
+  
+  #Add a line plot for simulated data
+  geom_line()+
+  
+  #Add observed data as points
+  geom_point(data=filet,aes(shape='Fertilization Rate'))+
+  
+  #Add a custom y-axis label with units
+  ylab(expression(Leaf~Area~Index~"("*m^2~m^{-2}*")"))+
+  
+  #Add a custom x-axis label
+  xlab("Days After Planting")+
+  
+  #Set color theme to black and white
+  theme_bw()+
+  
+  #Reposition legend
+  theme(legend.position=c(0.15,0.8))
+ 
+
+##########################################################################
+sample_filea <- system.file('extdata','SAMPLE.CRA',package='DSSAT')
+
+filea <- read_filea(sample_filea)
+  
+sample_sol <- c(
+  "*IB00000001  IBSNAT      SIC     210 DEFAULT - DEEP SILTY CLAY",
+  "@SITE        COUNTRY          LAT     LONG SCS FAMILY",
+  " Generic     Generic          -99      -99 Generic",
+  "@ SCOM  SALB  SLU1  SLDR  SLRO  SLNF  SLPF  SMHB  SMPX  SMKE",
+  "   -99  0.11   6.0  0.30  85.0  1.00  1.00 IB001 IB001 IB001",
+  "@  SLB  SLMH  SLLL  SDUL  SSAT  SRGF  SSKS  SBDM  SLOC  SLCL  SLSI  SLCF  SLNI  SLHW  SLHB",
+  "     5   -99 0.228 0.385 0.481 1.000   -99  1.30  1.75  50.0  45.0   0.0 0.170   6.5   -99",
+  "    15   -99 0.228 0.385 0.481 1.000   -99  1.30  1.75  50.0  45.0   0.0 0.170   6.5   -99",
+  "    30   -99 0.249 0.406 0.482 0.638   -99  1.30  1.60  50.0  45.0   0.0 0.170   6.5   -99",
+  "    45   -99 0.249 0.406 0.465 0.472   -99  1.35  1.45  50.0  45.0   0.0 0.140   6.5   -99",
+  "    60   -99 0.249 0.406 0.465 0.350   -99  1.35  1.45  50.0  45.0   0.0 0.140   6.5   -99",
+  "    90   -99 0.308 0.456 0.468 0.223   -99  1.35  1.10  50.0  45.0   0.0 0.110   6.5   -99",
+  "   120   -99 0.207 0.341 0.452 0.122   -99  1.40  0.65  50.0  45.0   0.0 0.060   6.5   -99",
+  "   150   -99 0.243 0.365 0.455 0.067   -99  1.40  0.30  50.0  45.0   0.0 0.030   6.5   -99",
+  "   180   -99 0.259 0.361 0.457 0.037   -99  1.40  0.10  50.0  45.0   0.0 0.010   6.5   -99",
+  "   210   -99 0.259 0.361 0.457 0.020   -99  1.40  0.01  50.0  45.0   0.0 0.000   6.5   -99")
+read_soil_profile(sample_sol)
+
+# Extract file path for sample soil file
+sample_sol <- system.file('extdata','soil.SOL',package='DSSAT')
+
+sol <- read_sol(sample_sol)
+
+
+
