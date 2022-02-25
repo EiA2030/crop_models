@@ -8,6 +8,7 @@ Tools in this module are available for use cases to adapt for their specific nee
 Implemntation of the WOFOST crop growth simulation model, using (for now) the [``Rwofost`` package](https://cran.r-project.org/web/packages/Rwofost/index.html). Certain implementations and functionality to facilitate us have been wrapped around this tool.
 
 ## DSSAT
+Implemntation of the DSSAT cropping system model. It requires compiling [``dssat-csm-os``](https://github.com/DSSAT/dssat-csm-os) and [``DSSAT`` package](https://cran.r-project.org/web/packages/DSSAT/index.html).
 
 ## APSIM
 ...
