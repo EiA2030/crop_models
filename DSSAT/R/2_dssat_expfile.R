@@ -20,12 +20,12 @@ dssat.expfile <- function(xmin,xmax,ymin,ymax,res,jobs,ex.name){
     #Read in original FileX
     file_x <- read_filex("ETBA8304.MZX")
     # Set the experimental directory
-    setwd(paste(getwd(),ex.name,paste0('EXTE', formatC(width = 4, pnt, flag = "0")), sep = "/"))
+    setwd(paste(getwd(),ex.name,paste0('TRAN', formatC(width = 4, pnt, flag = "0")), sep = "/"))
     #Make proposed chnages to FileX
-    file_x$FIELDS$WSTA<-paste0("WHTE", formatC(width = 4, pnt, flag = "0"))
-    file_x$FIELDS$ID_SOIL<-paste0('SOTE', formatC(width = 6, pnt, flag = "0"))
+    file_x$FIELDS$WSTA<-paste0("TRAN", formatC(width = 4, pnt, flag = "0"))
+    file_x$FIELDS$ID_SOIL<-paste0('TRAN', formatC(width = 6, pnt, flag = "0"))
     #Overwrite original FileX with new values
-    write_filex(file_x,paste0('EXTE', formatC(width = 4, pnt, flag = "0"),'.MZX'))
+    write_filex(file_x,paste0('TRAN', formatC(width = 4, pnt, flag = "0"),'.MZX'))
     setwd(here::here())
   }
 }

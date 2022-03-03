@@ -12,15 +12,15 @@ dssat.exec <- function(xmin,xmax,ymin,ymax,res,jobs,ex.name){
   # Process Experimental Files
   foreach::foreach(pnt=1:nrow(grid), .export = '.GlobalEnv', .inorder = TRUE, .packages = c("tidyverse", "here", "DSSAT")) %dopar% {
     # Set the experimental directory
-    setwd(paste(getwd(),ex.name,paste0('EXTE', formatC(width = 4, pnt, flag = "0")), sep = "/"))
+    setwd(paste(getwd(),ex.name,paste0('TRAN', formatC(width = 4, pnt, flag = "0")), sep = "/"))
     # Generate a DSSAT batch file using a tibble
     options(DSSAT.CSM="/media/TRANSFORM-EGB/eia2030/TRANSFORM2030_CropModels/docker/DSSAT/dssat-csm-os/build/bin/dscsm047")
-    tibble(FILEX=paste0('EXTE', formatC(width = 4, pnt, flag = "0"),'.MZX'), TRTNO=1:9, RP=1, SQ=0, OP=0, CO=0) %>%
+    tibble(FILEX=paste0('TRAN', formatC(width = 4, pnt, flag = "0"),'.MZX'), TRTNO=1:9, RP=1, SQ=0, OP=0, CO=0) %>%
       write_dssbatch()
     # Run DSSAT-CSM
     run_dssat(suppress_output = TRUE)
     # Change output file name
-    file.rename(list.files(pattern = "Summary.*"), paste0(paste0('EXTE', formatC(width = 4, pnt, flag = "0"), '.OUT')))
+    file.rename(list.files(pattern = "Summary.*"), paste0(paste0('TRAN', formatC(width = 4, pnt, flag = "0"), '.OUT')))
     setwd(here::here())
   }
 }
