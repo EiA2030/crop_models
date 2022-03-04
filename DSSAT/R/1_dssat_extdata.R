@@ -62,6 +62,6 @@ dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.
   }
 }
 
-# dssat.extdata(xmin = 36.66, xmax = 37.43, ymin = -1.35, ymax = -0.5, res = 0.5,
+# dssat.extdata(xmin = 36, xmax = 38, ymin = -1, ymax = 1, res = 0.5,
 #               sdate = "1990-02-20", edate = "2015-02-20",
 #               jobs = 4, ex.name = "test_simulation", path.to.extdata = "/path/to/extdata/")

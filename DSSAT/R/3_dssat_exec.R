@@ -25,5 +25,5 @@ dssat.exec <- function(xmin,xmax,ymin,ymax,res,jobs,ex.name,path.to.extdata){
   }
 }
 
-# dssat.exec(xmin = 36.66, xmax = 37.43, ymin = -1.35, ymax = -0.5, res = 0.5,
+# dssat.exec(xmin = 36, xmax = 38, ymin = -1, ymax = 1, res = 0.5,
 #            jobs = 4, ex.name = "test_simulation", path.to.extdata = "/path/to/extdata/")
