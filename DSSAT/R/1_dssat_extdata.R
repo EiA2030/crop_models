@@ -12,9 +12,15 @@ dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.
   # Create experiment directory
   dir.create(file.path(paste(getwd(), ex.name, sep = "/")))
   # Process soil & weather
+<<<<<<< HEAD
   foreach::foreach(pnt=0:nrow(grid), .export = '.GlobalEnv', .inorder = TRUE, .packages = c("tidyverse", "apsimx","DSSAT")) %dopar% {
     dir.create(file.path(paste(getwd(),ex.name,paste0('EXTE', formatC(width = 4, pnt, flag = "0")), sep = "/")))
     setwd(paste(path.to.extdata,ex.name,paste0('EXTE', formatC(width = 4, pnt, flag = "0")), sep = "/"))
+=======
+  foreach::foreach(pnt=1:nrow(grid), .export = '.GlobalEnv', .inorder = TRUE, .packages = c("tidyverse", "here", "DSSAT")) %dopar% {
+    dir.create(file.path(paste(getwd(),ex.name,paste0('TRAN', formatC(width = 4, pnt, flag = "0")), sep = "/")))
+    setwd(paste(getwd(),ex.name,paste0('TRAN', formatC(width = 4, pnt, flag = "0")), sep = "/"))
+>>>>>>> d12117b24ea37d1082284defd0976a7639e8ee98
     # read coordinates of the point
     x = grid[pnt+1,1]
     y = grid[pnt+1,2]
@@ -51,14 +57,23 @@ dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.
              SLNI=LNI,
              SLHW=LHW,
              SCEC=CEC)
+<<<<<<< HEAD
     write_sol(soilid, 'SOIL.SOL', append=F)
+=======
+    write_sol(soilid, 'SOIL.SOL', append=TRUE)
+>>>>>>> d12117b24ea37d1082284defd0976a7639e8ee98
     ##########################################
     # Get weather NASA POWER data
     weathRman::get_nasa_power(lat = y, long = x,
                               start = sdate, end = edate) %>%
       {attr(.,"comments") <- str_c("! ", attr(., "comments")); .} %>%
+<<<<<<< HEAD
       DSSAT::write_wth(paste0("WHTE", formatC(width = 4, pnt, flag = "0"), ".WTH"))
     setwd(path.to.extdata)
+=======
+      DSSAT::write_wth(paste0("TRAN", formatC(width = 4, pnt, flag = "0"), ".WTH"))
+    setwd(here::here())
+>>>>>>> d12117b24ea37d1082284defd0976a7639e8ee98
   }
 }
 
