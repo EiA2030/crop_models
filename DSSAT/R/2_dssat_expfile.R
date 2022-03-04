@@ -1,16 +1,16 @@
-dssat.expfile <- function(xmin,xmax,ymin,ymax,res,jobs,ex.name){
+dssat.expfile <- function(xmin,xmax,ymin,ymax,res,jobs,ex.name,path.to.extdata){
   require(doParallel)
   require(foreach)
   # Set number of parallel workers
   cls <- parallel::makePSOCKcluster(jobs)
   doParallel::registerDoParallel(cls)
   #Set working directory (where the file is)
-  setwd(here::here())
+  setwd(path.to.extdata)
   # Create grid
   grid = matrix(nrow = 0, ncol = 2)
   for (x in seq(xmin,xmax,res)) {for (y in seq(ymin,ymax,res)) {grid <- rbind(grid, c(x,y))}}
   # Process Experimental Files
-  foreach::foreach(pnt=1:nrow(grid), .export = '.GlobalEnv', .inorder = TRUE, .packages = c("tidyverse", "here", "DSSAT")) %dopar% {
+  foreach::foreach(pnt=0:nrow(grid), .export = '.GlobalEnv', .inorder = TRUE, .packages = c("tidyverse", "DSSAT")) %dopar% {
     #Read sample cultivar file and filter to only cultivar IF0014
     cul <- read_cul("MZCER047.CUL") %>%
       filter(`VAR#` == "IF0014")
@@ -23,12 +23,12 @@ dssat.expfile <- function(xmin,xmax,ymin,ymax,res,jobs,ex.name){
     setwd(paste(getwd(),ex.name,paste0('EXTE', formatC(width = 4, pnt, flag = "0")), sep = "/"))
     #Make proposed chnages to FileX
     file_x$FIELDS$WSTA<-paste0("WHTE", formatC(width = 4, pnt, flag = "0"))
-    file_x$FIELDS$ID_SOIL<-paste0('SOTE', formatC(width = 6, pnt, flag = "0"))
+    file_x$FIELDS$ID_SOIL<-paste0('TRAN', formatC(width = 6, pnt, flag = "0"))
     #Overwrite original FileX with new values
     write_filex(file_x,paste0('EXTE', formatC(width = 4, pnt, flag = "0"),'.MZX'))
-    setwd(here::here())
+    setwd(path.to.extdata)
   }
 }
 
-# dssat.extdata(xmin = 36.66, xmax = 37.43, ymin = -1.35, ymax = -0.5, res = 0.1,
-#               jobs = 8, ex.name = "test_simulation")
+# dssat.expfile(xmin = 36.66, xmax = 37.43, ymin = -1.35, ymax = -0.5, res = 0.5,
+#               jobs = 4, ex.name = "test_simulation", path.to.extdata = "/path/to/extdata/")

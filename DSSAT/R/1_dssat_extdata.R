@@ -1,41 +1,44 @@
-dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name){
+dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.to.extdata){
   require(doParallel)
   require(foreach)
   # Set number of parallel workers
   cls <- parallel::makePSOCKcluster(jobs)
   doParallel::registerDoParallel(cls)
   #Set working directory (where the file is)
-  setwd(here::here())
+  setwd(path.to.extdata)
   # Create grid
   grid = matrix(nrow = 0, ncol = 2)
   for (x in seq(xmin,xmax,res)) {for (y in seq(ymin,ymax,res)) {grid <- rbind(grid, c(x,y))}}
   # Create experiment directory
   dir.create(file.path(paste(getwd(), ex.name, sep = "/")))
   # Process soil & weather
-  foreach::foreach(pnt=1:nrow(grid), .export = '.GlobalEnv', .inorder = TRUE, .packages = c("tidyverse", "here", "DSSAT")) %dopar% {
+  foreach::foreach(pnt=0:nrow(grid), .export = '.GlobalEnv', .inorder = TRUE, .packages = c("tidyverse", "apsimx","DSSAT")) %dopar% {
     dir.create(file.path(paste(getwd(),ex.name,paste0('EXTE', formatC(width = 4, pnt, flag = "0")), sep = "/")))
-    setwd(paste(getwd(),ex.name,paste0('EXTE', formatC(width = 4, pnt, flag = "0")), sep = "/"))
+    setwd(paste(path.to.extdata,ex.name,paste0('EXTE', formatC(width = 4, pnt, flag = "0")), sep = "/"))
     # read coordinates of the point
-    x = grid[pnt,1]
-    y = grid[pnt,2]
+    x = grid[pnt+1,1]
+    y = grid[pnt+1,2]
     ##########################################
+    # Get soil ISRIC data
+    s <- get_isric_soil_profile(lonlat = c(x,y))
     Depth<-c(5,15,30,60,100,200)
-    LL15<-c(0.15,0.2,0.2,0.3,0.35,0.2)
-    DUL<-c(0.3,0.34,0.4,0.5,0.5,0.375)
-    SAT<-c(0.5,0.5,0.5,0.5,0.5,0.5)
-    SKS<-c(0.06,0.06,0.06,0.06,0.06,0.06)
+    LL15<-s$soil$LL15
+    DUL<-s$soil$DUL
+    SAT<-s$soil$SAT
+    SKS<-s$soil$KS
     SSS<-round(SKS, digits = 1)
-    BDM<-c(1.29,1.45,1.44,1.44,1.44,1.44)
-    LOC<-c(0.71,0.59,0.59,0.42,0.32,0.3)
-    LCL<-c(42,43,47,49,47,49)
-    LSI<-c(20,19,19,19,19,19)
-    LNI<-c(0.06,0.05,0.05,0.04,0.03,0.02)
-    LHW<-c(5.7,5.6,5.6,5.8,5.8,5.8)
+    BDM<-s$soil$BD
+    LOC<-s$soil$Carbon
+    LCL<-s$soil$ParticleSizeClay
+    LSI<-s$soil$ParticleSizeSilt
+    LNI<-s$soil$Nitrogen*0.0001
+    LHW<-s$soil$PH
+    CEC<-s$soil$CEC
     sol <- read_sol("../../soil.sol", id_soil = "IBPN910025")
     write_sol(sol, "NEW.SOL", append = FALSE)
     ex_profile <- read_sol("../../NEW.SOL", id_soil = "IBPN910025")
     soilid <- ex_profile %>%
-      mutate(PEDON=paste0('SOTE', formatC(width = 6, pnt, flag = "0")),
+      mutate(PEDON=paste0('TRAN', formatC(width = 6, pnt, flag = "0")),
              SLB=Depth,
              SLLL=LL15,
              SSAT=SAT,
@@ -46,18 +49,19 @@ dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name){
              SLCL=LCL,
              SLSI=LSI,
              SLNI=LNI,
-             SLHW=LHW)
-    write_sol(soilid, 'SOIL.SOL', append=TRUE)
+             SLHW=LHW,
+             SCEC=CEC)
+    write_sol(soilid, 'SOIL.SOL', append=F)
     ##########################################
     # Get weather NASA POWER data
     weathRman::get_nasa_power(lat = y, long = x,
                               start = sdate, end = edate) %>%
       {attr(.,"comments") <- str_c("! ", attr(., "comments")); .} %>%
       DSSAT::write_wth(paste0("WHTE", formatC(width = 4, pnt, flag = "0"), ".WTH"))
-    setwd(here::here())
+    setwd(path.to.extdata)
   }
 }
 
-# dssat.extdata(xmin = 36.66, xmax = 37.43, ymin = -1.35, ymax = -0.5, res = 0.1,
-#               sdate = "2020-02-20", edate = "2022-02-22",
-#               jobs = 8, ex.name = "test_simulation")
+# dssat.extdata(xmin = 36.66, xmax = 37.43, ymin = -1.35, ymax = -0.5, res = 0.5,
+#               sdate = "1990-02-20", edate = "2015-02-20",
+#               jobs = 2, ex.name = "test_simulation", path.to.extdata = "/path/to/extdata/")
