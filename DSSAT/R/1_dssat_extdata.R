@@ -1,20 +1,20 @@
-dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name){
+dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.to.extdata){
   require(doParallel)
   require(foreach)
   # Set number of parallel workers
   cls <- parallel::makePSOCKcluster(jobs)
   doParallel::registerDoParallel(cls)
   #Set working directory (where the file is)
-  setwd(here::here())
+  setwd(path.to.extdata)
   # Create grid
   grid = matrix(nrow = 0, ncol = 2)
   for (x in seq(xmin,xmax,res)) {for (y in seq(ymin,ymax,res)) {grid <- rbind(grid, c(x,y))}}
   # Create experiment directory
   dir.create(file.path(paste(getwd(), ex.name, sep = "/")))
   # Process soil & weather
-  foreach::foreach(pnt=1:nrow(grid), .export = '.GlobalEnv', .inorder = TRUE, .packages = c("tidyverse", "here", "DSSAT")) %dopar% {
-    dir.create(file.path(paste(getwd(),ex.name,paste0('TRAN', formatC(width = 4, pnt, flag = "0")), sep = "/")))
-    setwd(paste(getwd(),ex.name,paste0('TRAN', formatC(width = 4, pnt, flag = "0")), sep = "/"))
+  foreach::foreach(pnt=seq_along(grid[,1]), .export = '.GlobalEnv', .inorder = TRUE, .packages = c("tidyverse", "apsimx","DSSAT")) %dopar% {
+    dir.create(file.path(paste(getwd(),ex.name,paste0('EXTE', formatC(width = 4, pnt, flag = "0")), sep = "/")))
+    setwd(paste(path.to.extdata,ex.name,paste0('EXTE', formatC(width = 4, pnt, flag = "0")), sep = "/"))
     # read coordinates of the point
     x = grid[pnt,1]
     y = grid[pnt,2]
@@ -51,17 +51,17 @@ dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name){
              SLNI=LNI,
              SLHW=LHW,
              SCEC=CEC)
-    write_sol(soilid, 'SOIL.SOL', append=TRUE)
+    write_sol(soilid, 'SOIL.SOL', append = FALSE)
     ##########################################
     # Get weather NASA POWER data
     weathRman::get_nasa_power(lat = y, long = x,
                               start = sdate, end = edate) %>%
       {attr(.,"comments") <- str_c("! ", attr(., "comments")); .} %>%
-      DSSAT::write_wth(paste0("TRAN", formatC(width = 4, pnt, flag = "0"), ".WTH"))
-    setwd(here::here())
+      DSSAT::write_wth(paste0("WHTE", formatC(width = 4, pnt, flag = "0"), ".WTH"))
+    setwd(path.to.extdata)
   }
 }
 
-# dssat.extdata(xmin = 36.66, xmax = 37.43, ymin = -1.35, ymax = -0.5, res = 0.1,
-#               sdate = "2020-02-20", edate = "2022-02-22",
-#               jobs = 8, ex.name = "test_simulation")
+dssat.extdata(xmin = 37, xmax = 38, ymin = 0, ymax = 1, res = 0.5,
+              sdate = "2021-01-01", edate = "2021-12-31",
+              jobs = 2, ex.name = "test_simulation", path.to.extdata = "/media/TRANSFORM-EGB/eia2030/TRANSFORM2030_CropModels/crop_models/DSSAT/R/extdata/")
