@@ -12,16 +12,12 @@ dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.
   # Create experiment directory
   dir.create(file.path(paste(getwd(), ex.name, sep = "/")))
   # Process soil & weather
-<<<<<<< HEAD
   foreach::foreach(pnt=seq_along(grid[,1]), .export = '.GlobalEnv', .inorder = TRUE, .packages = c("tidyverse", "apsimx","DSSAT")) %dopar% {
-=======
-  foreach::foreach(pnt=0:nrow(grid), .export = '.GlobalEnv', .inorder = TRUE, .packages = c("tidyverse", "apsimx","DSSAT")) %dopar% {
->>>>>>> 89601bb82a6910b66c43b9f0486f19e03d4e716d
     dir.create(file.path(paste(getwd(),ex.name,paste0('EXTE', formatC(width = 4, pnt, flag = "0")), sep = "/")))
     setwd(paste(path.to.extdata,ex.name,paste0('EXTE', formatC(width = 4, pnt, flag = "0")), sep = "/"))
     # read coordinates of the point
-    x = grid[pnt+1,1]
-    y = grid[pnt+1,2]
+    x = grid[pnt,1]
+    y = grid[pnt,2]
     ##########################################
     # Get soil ISRIC data
     s <- get_isric_soil_profile(lonlat = c(x,y))
@@ -55,11 +51,7 @@ dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.
              SLNI=LNI,
              SLHW=LHW,
              SCEC=CEC)
-<<<<<<< HEAD
     write_sol(soilid, 'SOIL.SOL', append = FALSE)
-=======
-    write_sol(soilid, 'SOIL.SOL', append=F)
->>>>>>> 89601bb82a6910b66c43b9f0486f19e03d4e716d
     ##########################################
     # Get weather NASA POWER data
     weathRman::get_nasa_power(lat = y, long = x,
@@ -70,12 +62,6 @@ dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.
   }
 }
 
-<<<<<<< HEAD
 dssat.extdata(xmin = 37, xmax = 38, ymin = 0, ymax = 1, res = 0.5,
               sdate = "2021-01-01", edate = "2021-12-31",
-              jobs = 2, ex.name = "test_simulation", path.to.extdata = "/media/TRANSFORM-EGB/eia2030/TRANSFORM2030_CropModels/crop_models/DSSAT/R/extdata/")
-=======
-# dssat.extdata(xmin = 36, xmax = 38, ymin = -1, ymax = 1, res = 0.5,
-#               sdate = "1990-02-20", edate = "2015-02-20",
-#               jobs = 4, ex.name = "test_simulation", path.to.extdata = "/path/to/extdata/")
->>>>>>> 89601bb82a6910b66c43b9f0486f19e03d4e716d
+              jobs = 2, ex.name = "test_simulation", path.to.extdata = "path/to/extdata/")
