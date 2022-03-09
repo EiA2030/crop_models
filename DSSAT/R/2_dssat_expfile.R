@@ -20,12 +20,12 @@ dssat.expfile <- function(xmin,xmax,ymin,ymax,res,jobs,ex.name,path.to.extdata){
     #Read in original FileX
     file_x <- read_filex("ETBA8304.MZX")
     # Set the experimental directory
-    setwd(paste(path.to.extdata,ex.name,paste0('EXTE', formatC(width = 4, (pnt-1), flag = "0")), sep = "/"))
-    #Make proposed chnages to FileX
-    file_x$FIELDS$WSTA<-paste0("WHTE", formatC(width = 4, pnt, flag = "0"))
-    file_x$FIELDS$ID_SOIL<-paste0('TRAN', formatC(width = 6, pnt, flag = "0"))
+    setwd(paste(path.to.extdata,ex.name,paste0('EXTE', formatC(width = 4, as.integer((pnt-1)), flag = "0")), sep = "/"))
+    #Make proposed changes to FileX
+    file_x$FIELDS$WSTA<-paste0("WHTE", formatC(width = 4, as.integer((pnt-1)), flag = "0"))
+    file_x$FIELDS$ID_SOIL<-paste0('TRAN', formatC(width = 6, as.integer((pnt-1)), flag = "0"))
     #Overwrite original FileX with new values
-    write_filex(file_x,paste0('EXTE', formatC(width = 4, pnt, flag = "0"),'.MZX'))
+    write_filex(file_x,paste0('EXTE', formatC(width = 4, as.integer((pnt-1)), flag = "0"),'.MZX'))
     setwd(path.to.extdata)
     gc()
   }
