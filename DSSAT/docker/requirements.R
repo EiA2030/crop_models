@@ -7,6 +7,5 @@ devtools::install_github("ropensci/nasapower")
 pkgs <- c('soilDB',
           'ggplot2',
           'doParallel',
-          'foreach',
-          'here')
+          'foreach')
 install.packages(pkgs)
