@@ -78,9 +78,13 @@ dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.
           {attr(.,"comments") <- str_c("! ", attr(., "comments")); .}
       },
       error = function(e){
-        return(weathRman::get_nasa_power(lat = 9, long = 38,
+        wth <- weathRman::get_nasa_power(lat = 0, long = 0,
                                   start = sdate, end = edate) %>%
-          {attr(.,"comments") <- str_c("! ", attr(., "comments")); .})
+          {attr(.,"comments") <- str_c("! ", attr(., "comments")); .}
+        wth[,names(wth) != "DATE"] <- -99
+        t <- tibble(INSI = "NASA", LAT = y, LONG = x, ELEV = -99, TAV = -99, AMP = -99, REFHT = -99, WNDHT = -99)
+        attr(wth, "GENERAL") <- t
+        return(wth)
       }
     )
     write_wth(w, paste0("WHTE", formatC(width = 4, (as.integer(pnt)-1), flag = "0"), ".WTH"))
