@@ -10,10 +10,10 @@ dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.
   grid = matrix(nrow = 0, ncol = 2)
   for (x in seq(xmin,xmax,res)) {for (y in seq(ymin,ymax,res)) {grid <- rbind(grid, c(x,y))}}
   # Create experiment directory
-  dir.create(file.path(paste(getwd(), ex.name, sep = "/")))
+  dir.create(file.path(paste(path.to.extdata, ex.name, sep = "/")))
   # Process soil & weather
   foreach::foreach(pnt=seq_along(grid[,1]), .export = '.GlobalEnv', .inorder = TRUE, .packages = c("tidyverse", "apsimx","DSSAT")) %dopar% {
-    dir.create(file.path(paste(getwd(),ex.name,paste0('EXTE', formatC(width = 4, (as.integer(pnt)-1), flag = "0")), sep = "/")))
+    dir.create(file.path(paste(path.to.extdata,ex.name,paste0('EXTE', formatC(width = 4, (as.integer(pnt)-1), flag = "0")), sep = "/")))
     setwd(paste(path.to.extdata,ex.name,paste0('EXTE', formatC(width = 4, (as.integer(pnt)-1), flag = "0")), sep = "/"))
     # read coordinates of the point
     x = grid[pnt,1]
@@ -73,13 +73,18 @@ dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.
     # Get weather NASA POWER data
     w <- tryCatch(
       expr = {
-        weathRman::get_nasa_power(lat = y, long = x,
-                                  start = sdate, end = edate) %>%
+        wth <- weathRman::get_nasa_power(lat = y, long = x,
+                                         start = sdate, end = edate) %>%
           {attr(.,"comments") <- str_c("! ", attr(., "comments")); .}
+        prec <- chirps::get_chirps(object = data.frame(lon = x, lat = y),
+                                   dates = c(sdate, edate),
+                                   server = "ClimateSERV")
+        wth$RAIN <- prec$chirps
+        wth
       },
       error = function(e){
         wth <- weathRman::get_nasa_power(lat = 0, long = 0,
-                                  start = sdate, end = edate) %>%
+                                         start = sdate, end = edate) %>%
           {attr(.,"comments") <- str_c("! ", attr(., "comments")); .}
         wth[,names(wth) != "DATE"] <- -99
         t <- tibble(INSI = "NASA", LAT = y, LONG = x, ELEV = -99, TAV = -99, AMP = -99, REFHT = -99, WNDHT = -99)
