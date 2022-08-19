@@ -12,7 +12,7 @@ dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.
   # Create experiment directory
   dir.create(file.path(paste(path.to.extdata, ex.name, sep = "/")))
   # Process soil & weather
-  foreach::foreach(pnt=seq_along(grid[,1]), .export = '.GlobalEnv', .inorder = TRUE, .packages = c("tidyverse", "apsimx","DSSAT")) %dopar% {
+  foreach::foreach(pnt=seq_along(grid[,1]), .export = '.GlobalEnv', .inorder = TRUE, .packages = c("tidyverse", "lubridate")) %dopar% {
     dir.create(file.path(paste(path.to.extdata,ex.name,paste0('EXTE', formatC(width = 4, (as.integer(pnt)-1), flag = "0")), sep = "/")))
     setwd(paste(path.to.extdata,ex.name,paste0('EXTE', formatC(width = 4, (as.integer(pnt)-1), flag = "0")), sep = "/"))
     # read coordinates of the point
@@ -22,7 +22,7 @@ dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.
     # Get soil ISRIC data
     s <- tryCatch(
       expr = {
-        get_isric_soil_profile(lonlat = c(x,y))
+        apsimx::get_isric_soil_profile(lonlat = c(x,y))
       },
       error = function(e){
         return(list(soil=data.frame(LL15=as.integer(-99),
@@ -51,11 +51,17 @@ dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.
     LNI<-as.numeric(s$soil$Nitrogen)*0.0001
     LHW<-s$soil$PH
     CEC<-s$soil$CEC
-    sol <- read_sol("../../soil.sol", id_soil = "IBPN910025")
-    write_sol(sol, "NEW.SOL", append = FALSE)
-    ex_profile <- read_sol("../../NEW.SOL", id_soil = "IBPN910025")
-    soilid <- ex_profile %>%
+    sol <- DSSAT::read_sol("../../../../../base_data/soil.sol", id_soil = "IBPN910025")
+    soilid <- sol %>%
       mutate(PEDON=paste0('TRAN', formatC(width = 6, (as.integer(pnt)-1), flag = "0")),
+             SOURCE='ISRIC',
+             TEXTURE=-99,
+             DEPTH=max(Depth),
+             DESCRIPTION=-99,
+             SITE=-99,
+             COUNTRY=-99,
+             LAT=y,
+             LONG=x,
              SLB=Depth,
              SLLL=LL15,
              SSAT=SAT,
@@ -68,7 +74,7 @@ dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.
              SLNI=LNI,
              SLHW=LHW,
              SCEC=CEC)
-    write_sol(soilid, 'SOIL.SOL', append = FALSE)
+    DSSAT::write_sol(soilid, 'SOIL.SOL', append = FALSE)
     ##########################################
     # Get weather NASA POWER data
     w <- tryCatch(
@@ -76,23 +82,27 @@ dssat.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.
         wth <- weathRman::get_nasa_power(lat = y, long = x,
                                          start = sdate, end = edate) %>%
           {attr(.,"comments") <- str_c("! ", attr(., "comments")); .}
-        prec <- chirps::get_chirps(object = data.frame(lon = x, lat = y),
-                                   dates = c(sdate, edate),
-                                   server = "ClimateSERV")
-        wth$RAIN <- prec$chirps
+        source("/home/jovyan/TRANSFORM/egb/chirps/chirps.R")
+        prec <- chirps(startDate = sdate, endDate = edate, coordPoints = data.frame("X" = x, "Y" = y))
+        wth$RAIN <- prec$RAIN
+        g <- attr(wth, "GENERAL")
+        g$INSI <- "N + C"
+        attr(wth, "GENERAL") <- g
         wth
       },
       error = function(e){
-        wth <- weathRman::get_nasa_power(lat = 0, long = 0,
-                                         start = sdate, end = edate) %>%
-          {attr(.,"comments") <- str_c("! ", attr(., "comments")); .}
-        wth[,names(wth) != "DATE"] <- -99
-        t <- tibble(INSI = "NASA", LAT = y, LONG = x, ELEV = -99, TAV = -99, AMP = -99, REFHT = -99, WNDHT = -99)
+        dates <- seq(as.Date(sdate), as.Date(edate), by = "day")
+        err <- c("DATE","SRAD","TMAX","TMIN","RAIN","WIND","RHUM")
+        wth <- matrix(-99, nrow = length(dates), ncol = length(err))
+        wth <- as.data.frame(wth)
+        names(wth) <- c("DATE","SRAD","TMAX","TMIN","RAIN","WIND","RHUM")
+        wth[,names(wth) == "DATE"] <- dates
+        t <- tibble("INSI" = "NULL", "LAT" = y, "LONG" = x, "ELEV" = -99, "TAV" = -99, "AMP" = -99, "REFHT" = -99, "WNDHT" = -99)
         attr(wth, "GENERAL") <- t
         return(wth)
       }
     )
-    write_wth(w, paste0("WHTE", formatC(width = 4, (as.integer(pnt)-1), flag = "0"), ".WTH"))
+    DSSAT::write_wth(w, paste0("WHTE", formatC(width = 4, (as.integer(pnt)-1), flag = "0"), ".WTH"))
     setwd(path.to.extdata)
     gc()
   }
