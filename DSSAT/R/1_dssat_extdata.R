@@ -60,7 +60,7 @@ dssat.extdata <- function(coords,sdate,edate,jobs = 1,path.to.extdata,ex.file){
     LNI<-as.numeric(s$soil$Nitrogen)*0.0001
     LHW<-s$soil$PH
     CEC<-s$soil$CEC
-    sol <- DSSAT::read_sol("../../../../../base_data/soil.sol", id_soil = "IBPN910025")
+    sol <- DSSAT::read_sol("../../../base_data/soil.sol", id_soil = "IBPN910025")
     soilid <- sol %>%
       mutate(PEDON=paste0('TRAN', formatC(width = 6, (as.integer(pnt)-1), flag = "0")),
              SOURCE='ISRIC',
@@ -91,11 +91,8 @@ dssat.extdata <- function(coords,sdate,edate,jobs = 1,path.to.extdata,ex.file){
         wth <- weathRman::get_nasa_power(lat = y, long = x,
                                          start = sdate, end = edate) %>%
           {attr(.,"comments") <- str_c("! ", attr(., "comments")); .}
-        source("/home/jovyan/TRANSFORM/egb/chirps/chirps.R")
-        prec <- chirps(startDate = sdate, endDate = edate, coordPoints = data.frame("X" = x, "Y" = y))
-        wth$RAIN <- prec$RAIN
         g <- attr(wth, "GENERAL")
-        g$INSI <- "N + C"
+        g$INSI <- "NASA"
         attr(wth, "GENERAL") <- g
         wth
       },
