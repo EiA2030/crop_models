@@ -1,4 +1,16 @@
-apsim.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.to.extdata){
+#' Title Download and prepare soil and weather data inputs for APSIMX
+#'
+#' @param coords \strong{data.frame} with XY (Longitude, Latitude) format indicating the coordinate points in WGS84.
+#' @param sdate \strong{character string} with the date for the start of the simulation and YYYY-MM-DD format.
+#' @param edate \strong{character string} with the date for the end of the simulation and YYYY-MM-DD format.
+#' @param jobs \strong{integer} with the number of parallel processes. Default is 1 (non-parallel)
+#' @param ex.name \strong{character string} with the name of the name of the experiment name (same as for .apsimx).
+#' @param path.to.extdata \strong{character string} with the full path to the directory where the outputs of the simulation will be written. Needs to contain an .apsimx file.
+#' @return void
+#'
+#' @examples apsimx.extdata(coords = data.frame("LON" = c(7.5, 7.94), "LAT" = c(10.634, 11.12)), sdate = "2021-03-14", edate "2021-10-21", jobs = 2, ex.name = "ABCD12345.apsimx", path.to.extdata = "path/to/")
+
+apsimx.extdata <- function(coords,sdate=NULL,edate=NULL,jobs =1,ex.name,path.to.extdata){
   require(doParallel)
   require(foreach)
   # Set number of parallel workers
@@ -6,18 +18,15 @@ apsim.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.
   doParallel::registerDoParallel(cls)
   #Set working directory (where the file is)
   setwd(path.to.extdata)
-  # Create grid
-  grid = matrix(nrow = 0, ncol = 2)
-  for (x in seq(xmin,xmax,res)) {for (y in seq(ymin,ymax,res)) {grid <- rbind(grid, c(x,y))}}
   # Create experiment directory
   dir.create(file.path(paste(path.to.extdata, ex.name, sep = "/")))
   # Process soil & weather
-  foreach::foreach(pnt=seq_along(grid[,1]), .export = '.GlobalEnv', .inorder = TRUE, .packages = c("tidyverse", "lubridate", "apsimx")) %dopar% {
+  foreach::foreach(pnt=seq_along(coords[,1]), .export = '.GlobalEnv', .inorder = TRUE, .packages = c("tidyverse", "lubridate", "apsimx")) %dopar% {
     dir.create(file.path(paste(path.to.extdata,ex.name,paste0('EXTE', formatC(width = 4, (as.integer(pnt)-1), flag = "0")), sep = "/")))
     setwd(paste(path.to.extdata,ex.name,paste0('EXTE', formatC(width = 4, (as.integer(pnt)-1), flag = "0")), sep = "/"))
     # read coordinates of the point
-    x = grid[pnt,1]
-    y = grid[pnt,2]
+    x = coords[pnt,1]
+    y = coords[pnt,2]
     ##########################################
     # Get soil ISRIC data
     s <- tryCatch(
@@ -37,10 +46,6 @@ apsim.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.
       expr = {
         wth <- apsimx::get_power_apsim_met(c(x, y), 
                                    dates = c(sdate, edate))
-        # prec <- chirps::get_chirps(object = data.frame(lon = x, lat = y),
-        #                            dates = c(sdate, edate),
-        #                            server = "ClimateSERV")
-        # wth$rain <- round(prec$chirps, 2)
         attr(wth, "longitude") <- paste0("longitude = ", x)
         attr(wth, "latitude") <- paste0("latitude = ", y)
         attr(wth, "tav") <- paste0("tav = ", mean((wth$maxt+wth$mint)/2))
@@ -66,4 +71,5 @@ apsim.extdata <- function(xmin,xmax,ymin,ymax,res,sdate,edate,jobs,ex.name,path.
     setwd(path.to.extdata)
     gc()
   }
+  rm(list=ls(name = foreach:::.foreachGlobals), pos = foreach:::.foreachGlobals)
 }
